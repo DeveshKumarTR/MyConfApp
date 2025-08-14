@@ -1,0 +1,170 @@
+{
+  "name": "myconfapp-client",
+  "productName": "MyConfApp Client",
+  "version": "1.0.0",
+  "description": "Professional Video Conferencing Desktop Client",
+  "main": "src/main.js",
+  "homepage": "https://myconfapp.com",
+  "author": {
+    "name": "MyConfApp Inc.",
+    "email": "support@myconfapp.com",
+    "url": "https://myconfapp.com"
+  },
+  "license": "Commercial",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --development",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win",
+    "build-mac": "electron-builder --mac",
+    "build-linux": "electron-builder --linux",
+    "dist": "npm run build",
+    "pack": "electron-builder --dir",
+    "postinstall": "electron-rebuild",
+    "test": "jest",
+    "lint": "eslint src/",
+    "clean": "rimraf dist/ build/"
+  },
+  "build": {
+    "appId": "com.myconfapp.client",
+    "productName": "MyConfApp Client",
+    "copyright": "Copyright © 2025 MyConfApp Inc.",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "node_modules/**/*",
+      "!node_modules/.cache/**/*"
+    ],
+    "extraMetadata": {
+      "main": "src/main.js"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        },
+        {
+          "target": "msi",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icons/icon.ico",
+      "artifactName": "MyConfApp-Client-Windows-${arch}-v${version}.${ext}",
+      "publisherName": "MyConfApp Inc.",
+      "verifyUpdateCodeSignature": false
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "assets/icons/icon.icns",
+      "artifactName": "MyConfApp-Client-macOS-${arch}-v${version}.${ext}",
+      "category": "public.app-category.business",
+      "darkModeSupport": true
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        },
+        {
+          "target": "rpm",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icons/icon.png",
+      "artifactName": "MyConfApp-Client-Linux-${arch}-v${version}.${ext}",
+      "category": "Network",
+      "desktop": {
+        "Name": "MyConfApp Client",
+        "Comment": "Professional Video Conferencing",
+        "Categories": "Network;AudioVideo;Office;"
+      }
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "MyConfApp Client",
+      "license": "LICENSE.txt"
+    },
+    "dmg": {
+      "title": "MyConfApp Client v${version}",
+      "background": "assets/dmg-background.png",
+      "iconSize": 100,
+      "contents": [
+        {
+          "x": 380,
+          "y": 280,
+          "type": "link",
+          "path": "/Applications"
+        },
+        {
+          "x": 110,
+          "y": 280,
+          "type": "file"
+        }
+      ]
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "myconfapp",
+      "repo": "client-releases"
+    }
+  },
+  "dependencies": {
+    "electron": "^27.0.0",
+    "electron-updater": "^6.1.4",
+    "electron-store": "^8.1.0",
+    "socket.io-client": "^4.7.2",
+    "webrtc-adapter": "^8.2.3",
+    "bootstrap": "^5.3.2",
+    "jquery": "^3.7.1",
+    "recordrtc": "^5.6.2",
+    "crypto-js": "^4.1.1",
+    "lodash": "^4.17.21",
+    "moment": "^2.29.4",
+    "node-notifier": "^10.0.1",
+    "auto-launch": "^5.0.5",
+    "keytar": "^7.9.0"
+  },
+  "devDependencies": {
+    "electron-builder": "^24.6.4",
+    "electron-rebuild": "^3.2.9",
+    "jest": "^29.7.0",
+    "eslint": "^8.50.0",
+    "rimraf": "^5.0.5",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "keywords": [
+    "video conferencing",
+    "desktop app",
+    "electron",
+    "webrtc",
+    "business communication",
+    "meeting software"
+  ]
+}

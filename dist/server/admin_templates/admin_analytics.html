@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - Teams Clone Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        .admin-sidebar {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            min-height: 100vh;
+            color: white;
+        }
+        .admin-content {
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .analytics-card {
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            transition: all 0.2s ease;
+        }
+        .analytics-card:hover {
+            border-color: #007bff;
+            box-shadow: 0 4px 15px rgba(0,123,255,0.1);
+        }
+        .sidebar-link {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            padding: 12px 20px;
+            display: block;
+            border-radius: 8px;
+            margin: 5px 15px;
+            transition: all 0.2s ease;
+        }
+        .sidebar-link:hover, .sidebar-link.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            text-decoration: none;
+        }
+        .admin-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            transition: transform 0.2s ease;
+        }
+        .metric-card:hover {
+            transform: translateY(-5px);
+        }
+        .trend-up {
+            color: #28a745;
+        }
+        .trend-down {
+            color: #dc3545;
+        }
+        .trend-neutral {
+            color: #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 admin-sidebar p-0">
+                <div class="p-4">
+                    <h4><i class="bi bi-shield-check"></i> Admin Panel</h4>
+                    <p class="text-light">Welcome, {{ admin_user }}</p>
+                </div>
+                <nav>
+                    <a href="/" class="sidebar-link">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                    <a href="/rooms" class="sidebar-link">
+                        <i class="bi bi-camera-video"></i> Room Management
+                    </a>
+                    <a href="/users" class="sidebar-link">
+                        <i class="bi bi-people"></i> User Management
+                    </a>
+                    <a href="/meetings" class="sidebar-link">
+                        <i class="bi bi-calendar-event"></i> Meeting Management
+                    </a>
+                    <a href="/analytics" class="sidebar-link active">
+                        <i class="bi bi-graph-up"></i> Analytics
+                    </a>
+                    <hr class="my-4" style="border-color: rgba(255,255,255,0.2);">
+                    <a href="http://localhost:8001" target="_blank" class="sidebar-link">
+                        <i class="bi bi-box-arrow-up-right"></i> Open Teams App
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 admin-content p-4">
+                <!-- Header -->
+                <div class="admin-header">
+                    <h2><i class="bi bi-graph-up"></i> Analytics Dashboard</h2>
+                    <p class="mb-0">Comprehensive insights and performance metrics</p>
+                </div>
+
+                <!-- Time Range Selector -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h5 class="mb-0">Analytics Period</h5>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <div class="btn-group" role="group">
+                                    <input type="radio" class="btn-check" name="timePeriod" id="today" checked onclick="changePeriod('today')">
+                                    <label class="btn btn-outline-primary" for="today">Today</label>
+                                    
+                                    <input type="radio" class="btn-check" name="timePeriod" id="week" onclick="changePeriod('week')">
+                                    <label class="btn btn-outline-primary" for="week">This Week</label>
+                                    
+                                    <input type="radio" class="btn-check" name="timePeriod" id="month" onclick="changePeriod('month')">
+                                    <label class="btn btn-outline-primary" for="month">This Month</label>
+                                </div>
+                                <button class="btn btn-primary ms-2" onclick="refreshAnalytics()">
+                                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Key Metrics -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card metric-card">
+                            <div class="card-body text-center">
+                                <i class="bi bi-people display-4"></i>
+                                <h3>{{ analytics.total_users }}</h3>
+                                <p>Total Users</p>
+                                <small class="trend-up">
+                                    <i class="bi bi-arrow-up"></i> +12% from last period
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card metric-card">
+                            <div class="card-body text-center">
+                                <i class="bi bi-camera-video display-4"></i>
+                                <h3>{{ analytics.total_meetings }}</h3>
+                                <p>Total Meetings</p>
+                                <small class="trend-up">
+                                    <i class="bi bi-arrow-up"></i> +8% from last period
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card metric-card">
+                            <div class="card-body text-center">
+                                <i class="bi bi-clock display-4"></i>
+                                <h3>{{ analytics.avg_meeting_duration }}</h3>
+                                <p>Avg Meeting Duration</p>
+                                <small class="trend-down">
+                                    <i class="bi bi-arrow-down"></i> -5% from last period
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card metric-card">
+                            <div class="card-body text-center">
+                                <i class="bi bi-record-circle display-4"></i>
+                                <h3>{{ analytics.total_recordings }}</h3>
+                                <p>Total Recordings</p>
+                                <small class="trend-up">
+                                    <i class="bi bi-arrow-up"></i> +15% from last period
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row 1 -->
+                <div class="row mb-4">
+                    <div class="col-md-8">
+                        <div class="analytics-card p-3">
+                            <h5><i class="bi bi-graph-up"></i> Meeting Activity Over Time</h5>
+                            <div class="chart-container">
+                                <canvas id="meetingActivityChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="analytics-card p-3">
+                            <h5><i class="bi bi-pie-chart"></i> Meeting Status Distribution</h5>
+                            <div class="chart-container">
+                                <canvas id="meetingStatusChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row 2 -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="analytics-card p-3">
+                            <h5><i class="bi bi-bar-chart"></i> Peak Usage Hours</h5>
+                            <div class="chart-container">
+                                <canvas id="peakHoursChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="analytics-card p-3">
+                            <h5><i class="bi bi-graph-up-arrow"></i> User Engagement</h5>
+                            <div class="chart-container">
+                                <canvas id="userEngagementChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Statistics -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="analytics-card p-3">
+                            <h5><i class="bi bi-list-ul"></i> Top Performing Rooms</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Room</th>
+                                            <th>Meetings</th>
+                                            <th>Duration</th>
+                                            <th>Participants</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for room in analytics.top_rooms %}
+                                        <tr>
+                                            <td>{{ room.name[:15] }}...</td>
+                                            <td>{{ room.meeting_count }}</td>
+                                            <td>{{ room.total_duration }}</td>
+                                            <td>{{ room.unique_participants }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                        
+                                        {% if not analytics.top_rooms %}
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted">No data available</td>
+                                        </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="analytics-card p-3">
+                            <h5><i class="bi bi-award"></i> Most Active Users</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Meetings</th>
+                                            <th>Time Spent</th>
+                                            <th>Last Active</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for user in analytics.top_users %}
+                                        <tr>
+                                            <td>{{ user.name }}</td>
+                                            <td>{{ user.meeting_count }}</td>
+                                            <td>{{ user.total_time }}</td>
+                                            <td>{{ user.last_active }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                        
+                                        {% if not analytics.top_users %}
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted">No data available</td>
+                                        </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Performance -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="analytics-card p-3">
+                            <h5><i class="bi bi-cpu"></i> System Performance</h5>
+                            <div class="mb-3">
+                                <label class="form-label">CPU Usage</label>
+                                <div class="progress">
+                                    <div class="progress-bar bg-info" style="width: {{ analytics.system.cpu_usage }}%">
+                                        {{ analytics.system.cpu_usage }}%
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Memory Usage</label>
+                                <div class="progress">
+                                    <div class="progress-bar bg-warning" style="width: {{ analytics.system.memory_usage }}%">
+                                        {{ analytics.system.memory_usage }}%
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Network I/O</label>
+                                <div class="progress">
+                                    <div class="progress-bar bg-success" style="width: {{ analytics.system.network_io }}%">
+                                        {{ analytics.system.network_io }}%
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="analytics-card p-3">
+                            <h5><i class="bi bi-speedometer"></i> Connection Quality</h5>
+                            <div class="text-center">
+                                <div class="mb-3">
+                                    <h3 class="text-success">{{ analytics.connection.avg_quality }}%</h3>
+                                    <p>Average Quality</p>
+                                </div>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small class="text-muted">Excellent</small><br>
+                                        <strong class="text-success">{{ analytics.connection.excellent }}%</strong>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Poor</small><br>
+                                        <strong class="text-danger">{{ analytics.connection.poor }}%</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="analytics-card p-3">
+                            <h5><i class="bi bi-exclamation-triangle"></i> Issues & Alerts</h5>
+                            <div class="list-group list-group-flush">
+                                {% for issue in analytics.recent_issues %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <small class="text-muted">{{ issue.timestamp }}</small><br>
+                                        <strong>{{ issue.message }}</strong>
+                                    </div>
+                                    <span class="badge bg-{{ issue.severity }} rounded-pill">{{ issue.severity }}</span>
+                                </div>
+                                {% endfor %}
+                                
+                                {% if not analytics.recent_issues %}
+                                <div class="text-center text-muted py-3">
+                                    <i class="bi bi-check-circle text-success"></i>
+                                    <p class="mb-0">No recent issues</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Options -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h5 class="mb-0">Export Analytics</h5>
+                                <p class="text-muted mb-0">Download comprehensive analytics reports</p>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <button class="btn btn-outline-primary" onclick="exportAnalytics('pdf')">
+                                    <i class="bi bi-file-pdf"></i> Export PDF
+                                </button>
+                                <button class="btn btn-outline-success" onclick="exportAnalytics('excel')">
+                                    <i class="bi bi-file-excel"></i> Export Excel
+                                </button>
+                                <button class="btn btn-outline-info" onclick="exportAnalytics('csv')">
+                                    <i class="bi bi-file-csv"></i> Export CSV
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script>
+        // Chart.js configurations
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            }
+        };
+
+        // Meeting Activity Chart
+        const meetingActivityCtx = document.getElementById('meetingActivityChart').getContext('2d');
+        const meetingActivityChart = new Chart(meetingActivityCtx, {
+            type: 'line',
+            data: {
+                labels: {{ analytics.activity_labels | safe }},
+                datasets: [{
+                    label: 'Meetings',
+                    data: {{ analytics.activity_data | safe }},
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: chartOptions
+        });
+
+        // Meeting Status Chart
+        const meetingStatusCtx = document.getElementById('meetingStatusChart').getContext('2d');
+        const meetingStatusChart = new Chart(meetingStatusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Scheduled', 'Active', 'Completed', 'Cancelled'],
+                datasets: [{
+                    data: {{ analytics.status_data | safe }},
+                    backgroundColor: [
+                        '#007bff',
+                        '#28a745',
+                        '#6c757d',
+                        '#dc3545'
+                    ]
+                }]
+            },
+            options: chartOptions
+        });
+
+        // Peak Hours Chart
+        const peakHoursCtx = document.getElementById('peakHoursChart').getContext('2d');
+        const peakHoursChart = new Chart(peakHoursCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ analytics.hours_labels | safe }},
+                datasets: [{
+                    label: 'Active Users',
+                    data: {{ analytics.hours_data | safe }},
+                    backgroundColor: 'rgba(54, 162, 235, 0.8)'
+                }]
+            },
+            options: chartOptions
+        });
+
+        // User Engagement Chart
+        const userEngagementCtx = document.getElementById('userEngagementChart').getContext('2d');
+        const userEngagementChart = new Chart(userEngagementCtx, {
+            type: 'radar',
+            data: {
+                labels: ['Video Quality', 'Audio Quality', 'Connection Stability', 'User Satisfaction', 'Feature Usage'],
+                datasets: [{
+                    label: 'Current Period',
+                    data: {{ analytics.engagement_data | safe }},
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)'
+                }]
+            },
+            options: chartOptions
+        });
+
+        function changePeriod(period) {
+            console.log(`Changing to ${period} view`);
+            // In a real implementation, this would fetch new data and update charts
+            refreshAnalytics();
+        }
+
+        function refreshAnalytics() {
+            location.reload();
+        }
+
+        function exportAnalytics(format) {
+            fetch(`/api/analytics/export?format=${format}`)
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `analytics_report.${format}`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => {
+                alert('Error exporting analytics: ' + error);
+            });
+        }
+
+        // Auto-refresh analytics every 2 minutes
+        setInterval(refreshAnalytics, 120000);
+
+        // Real-time updates for system metrics
+        setInterval(() => {
+            fetch('/api/analytics/realtime')
+            .then(response => response.json())
+            .then(data => {
+                // Update system performance meters
+                console.log('Real-time update:', data);
+            })
+            .catch(error => console.error('Error fetching real-time data:', error));
+        }, 30000);
+    </script>
+</body>
+</html>

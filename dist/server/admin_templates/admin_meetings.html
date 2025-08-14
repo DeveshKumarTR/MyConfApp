@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Management - Teams Clone Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        .admin-sidebar {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            min-height: 100vh;
+            color: white;
+        }
+        .admin-content {
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .meeting-card {
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            transition: all 0.2s ease;
+        }
+        .meeting-card:hover {
+            border-color: #007bff;
+            box-shadow: 0 4px 15px rgba(0,123,255,0.1);
+        }
+        .sidebar-link {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            padding: 12px 20px;
+            display: block;
+            border-radius: 8px;
+            margin: 5px 15px;
+            transition: all 0.2s ease;
+        }
+        .sidebar-link:hover, .sidebar-link.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            text-decoration: none;
+        }
+        .admin-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .meeting-status {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-scheduled {
+            background: #007bff;
+        }
+        .status-active {
+            background: #28a745;
+        }
+        .status-completed {
+            background: #6c757d;
+        }
+        .status-cancelled {
+            background: #dc3545;
+        }
+        .calendar-view {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 admin-sidebar p-0">
+                <div class="p-4">
+                    <h4><i class="bi bi-shield-check"></i> Admin Panel</h4>
+                    <p class="text-light">Welcome, {{ admin_user }}</p>
+                </div>
+                <nav>
+                    <a href="/" class="sidebar-link">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                    <a href="/rooms" class="sidebar-link">
+                        <i class="bi bi-camera-video"></i> Room Management
+                    </a>
+                    <a href="/users" class="sidebar-link">
+                        <i class="bi bi-people"></i> User Management
+                    </a>
+                    <a href="/meetings" class="sidebar-link active">
+                        <i class="bi bi-calendar-event"></i> Meeting Management
+                    </a>
+                    <a href="/analytics" class="sidebar-link">
+                        <i class="bi bi-graph-up"></i> Analytics
+                    </a>
+                    <hr class="my-4" style="border-color: rgba(255,255,255,0.2);">
+                    <a href="http://localhost:8001" target="_blank" class="sidebar-link">
+                        <i class="bi bi-box-arrow-up-right"></i> Open Teams App
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 admin-content p-4">
+                <!-- Header -->
+                <div class="admin-header">
+                    <h2><i class="bi bi-calendar-event"></i> Meeting Management</h2>
+                    <p class="mb-0">Monitor and control all scheduled and active meetings</p>
+                </div>
+
+                <!-- Meeting Stats -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h3 class="text-primary">{{ meeting_stats.scheduled_meetings }}</h3>
+                                <p class="text-muted">Scheduled</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h3 class="text-success">{{ meeting_stats.active_meetings }}</h3>
+                                <p class="text-muted">Active Now</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h3 class="text-info">{{ meeting_stats.completed_today }}</h3>
+                                <p class="text-muted">Completed Today</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h3 class="text-danger">{{ meeting_stats.cancelled_meetings }}</h3>
+                                <p class="text-muted">Cancelled</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions Bar -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h5 class="mb-0">Meeting Actions</h5>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <button class="btn btn-primary" onclick="refreshMeetings()">
+                                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                                </button>
+                                <button class="btn btn-success" onclick="createMeeting()">
+                                    <i class="bi bi-plus-circle"></i> Create Meeting
+                                </button>
+                                <button class="btn btn-warning" onclick="exportMeetings()">
+                                    <i class="bi bi-download"></i> Export
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- View Toggle -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check" name="viewType" id="listView" checked onclick="switchView('list')">
+                            <label class="btn btn-outline-primary" for="listView">
+                                <i class="bi bi-list"></i> List View
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="viewType" id="calendarView" onclick="switchView('calendar')">
+                            <label class="btn btn-outline-primary" for="calendarView">
+                                <i class="bi bi-calendar"></i> Calendar View
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- List View -->
+                <div id="listViewContainer" class="card">
+                    <div class="card-header">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h5><i class="bi bi-list"></i> All Meetings</h5>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <select class="form-select" style="width: 200px; display: inline-block;" onchange="filterMeetings(this.value)">
+                                    <option value="">All Status</option>
+                                    <option value="scheduled">Scheduled</option>
+                                    <option value="active">Active</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% if meetings %}
+                            <div class="row" id="meetingsContainer">
+                                {% for meeting in meetings %}
+                                <div class="col-md-6 mb-3 meeting-item" data-status="{{ meeting.status }}">
+                                    <div class="meeting-card p-3">
+                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                            <div>
+                                                <h6 class="mb-1">
+                                                    <span class="meeting-status status-{{ meeting.status }}"></span>
+                                                    {{ meeting.title }}
+                                                </h6>
+                                                <small class="text-muted">Organized by {{ meeting.organizer }}</small>
+                                            </div>
+                                            <div class="text-end">
+                                                {% if meeting.status == 'scheduled' %}
+                                                    <span class="badge bg-primary">Scheduled</span>
+                                                {% elif meeting.status == 'active' %}
+                                                    <span class="badge bg-success">Active</span>
+                                                {% elif meeting.status == 'completed' %}
+                                                    <span class="badge bg-secondary">Completed</span>
+                                                {% elif meeting.status == 'cancelled' %}
+                                                    <span class="badge bg-danger">Cancelled</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+
+                                        <!-- Meeting Info -->
+                                        <div class="row mb-3">
+                                            <div class="col-6">
+                                                <small class="text-muted">Date & Time:</small><br>
+                                                <strong>{{ meeting.date }} {{ meeting.startTime }}</strong>
+                                            </div>
+                                            <div class="col-6">
+                                                <small class="text-muted">Duration:</small><br>
+                                                <strong>{{ meeting.duration }} minutes</strong>
+                                            </div>
+                                        </div>
+
+                                        {% if meeting.description %}
+                                        <div class="mb-3">
+                                            <small class="text-muted">Description:</small><br>
+                                            <p class="small">{{ meeting.description[:100] }}{% if meeting.description|length > 100 %}...{% endif %}</p>
+                                        </div>
+                                        {% endif %}
+
+                                        {% if meeting.participants %}
+                                        <div class="mb-3">
+                                            <small class="text-muted">Participants ({{ meeting.participants|length }}):</small>
+                                            <div class="mt-1">
+                                                {% for participant in meeting.participants[:3] %}
+                                                <span class="badge bg-info me-1">{{ participant }}</span>
+                                                {% endfor %}
+                                                {% if meeting.participants|length > 3 %}
+                                                <span class="badge bg-light text-dark">+{{ meeting.participants|length - 3 }} more</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+
+                                        <!-- Actions -->
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-sm btn-outline-primary" onclick="meetingDetails('{{ meeting.id }}')">
+                                                <i class="bi bi-info-circle"></i> Details
+                                            </button>
+                                            {% if meeting.status == 'scheduled' %}
+                                            <button class="btn btn-sm btn-outline-success" onclick="startMeeting('{{ meeting.id }}')">
+                                                <i class="bi bi-play-circle"></i> Start
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-warning" onclick="editMeeting('{{ meeting.id }}')">
+                                                <i class="bi bi-pencil"></i> Edit
+                                            </button>
+                                            {% endif %}
+                                            {% if meeting.status == 'active' %}
+                                            <button class="btn btn-sm btn-outline-info" onclick="joinMeeting('{{ meeting.id }}')">
+                                                <i class="bi bi-camera-video"></i> Join
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-warning" onclick="endMeeting('{{ meeting.id }}')">
+                                                <i class="bi bi-stop-circle"></i> End
+                                            </button>
+                                            {% endif %}
+                                            {% if meeting.status in ['scheduled', 'active'] %}
+                                            <button class="btn btn-sm btn-danger" onclick="cancelMeeting('{{ meeting.id }}')">
+                                                <i class="bi bi-x-circle"></i> Cancel
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center text-muted py-5">
+                                <i class="bi bi-calendar-x display-1"></i>
+                                <h4>No Meetings Found</h4>
+                                <p>There are currently no meetings in the system.</p>
+                                <button class="btn btn-primary" onclick="createMeeting()">
+                                    <i class="bi bi-plus-circle"></i> Create First Meeting
+                                </button>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Calendar View -->
+                <div id="calendarViewContainer" class="calendar-view" style="display: none;">
+                    <h5><i class="bi bi-calendar"></i> Calendar View</h5>
+                    <div id="calendar" class="mt-3">
+                        <!-- Calendar implementation would go here -->
+                        <div class="text-center text-muted py-5">
+                            <i class="bi bi-calendar3 display-1"></i>
+                            <h4>Calendar View</h4>
+                            <p>Calendar integration would be implemented here using a library like FullCalendar.js</p>
+                            <button class="btn btn-primary" onclick="switchView('list')">
+                                Switch to List View
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Meeting Details Modal -->
+    <div class="modal fade" id="meetingDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Meeting Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="meetingDetailsContent">
+                    <!-- Content loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Meeting Modal -->
+    <div class="modal fade" id="createMeetingModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createMeetingTitle">Create New Meeting</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="meeting-form">
+                        <input type="hidden" id="meeting-id" name="meeting_id">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Meeting Title *</label>
+                                    <input type="text" class="form-control" name="title" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Organizer</label>
+                                    <input type="text" class="form-control" name="organizer" value="Administrator" readonly>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Date *</label>
+                                    <input type="date" class="form-control" name="date" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Start Time *</label>
+                                    <input type="time" class="form-control" name="startTime" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Duration (minutes) *</label>
+                                    <input type="number" class="form-control" name="duration" value="60" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Participants (comma-separated emails or names)</label>
+                            <textarea class="form-control" name="participants" rows="2" placeholder="user1@example.com, user2@example.com"></textarea>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="autoRecord" id="autoRecord">
+                            <label class="form-check-label" for="autoRecord">
+                                Auto-record meeting
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveMeeting()">Save Meeting</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function refreshMeetings() {
+            location.reload();
+        }
+
+        function switchView(viewType) {
+            const listView = document.getElementById('listViewContainer');
+            const calendarView = document.getElementById('calendarViewContainer');
+
+            if (viewType === 'list') {
+                listView.style.display = 'block';
+                calendarView.style.display = 'none';
+            } else {
+                listView.style.display = 'none';
+                calendarView.style.display = 'block';
+            }
+        }
+
+        function filterMeetings(status) {
+            const meetingItems = document.querySelectorAll('.meeting-item');
+            meetingItems.forEach(item => {
+                if (!status || item.dataset.status === status) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        function meetingDetails(meetingId) {
+            fetch(`/api/meetings/${meetingId}/details`)
+            .then(response => response.json())
+            .then(data => {
+                const content = document.getElementById('meetingDetailsContent');
+                content.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Meeting Information</h6>
+                            <p><strong>Title:</strong> ${data.title}</p>
+                            <p><strong>Organizer:</strong> ${data.organizer}</p>
+                            <p><strong>Date:</strong> ${data.date}</p>
+                            <p><strong>Time:</strong> ${data.startTime}</p>
+                            <p><strong>Duration:</strong> ${data.duration} minutes</p>
+                            <p><strong>Status:</strong> ${data.status}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Description</h6>
+                            <p>${data.description || 'No description provided'}</p>
+                            
+                            <h6>Participants</h6>
+                            <div class="list-group">
+                                ${data.participants ? data.participants.map(p => `
+                                    <div class="list-group-item">${p}</div>
+                                `).join('') : '<p class="text-muted">No participants</p>'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                const modal = new bootstrap.Modal(document.getElementById('meetingDetailsModal'));
+                modal.show();
+            })
+            .catch(error => {
+                alert('Error fetching meeting details: ' + error);
+            });
+        }
+
+        function createMeeting() {
+            document.getElementById('createMeetingTitle').textContent = 'Create New Meeting';
+            document.getElementById('meeting-form').reset();
+            document.getElementById('meeting-id').value = '';
+            
+            // Set default date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.querySelector('input[name="date"]').value = today;
+            
+            const modal = new bootstrap.Modal(document.getElementById('createMeetingModal'));
+            modal.show();
+        }
+
+        function editMeeting(meetingId) {
+            document.getElementById('createMeetingTitle').textContent = 'Edit Meeting';
+            document.getElementById('meeting-id').value = meetingId;
+            
+            // Load meeting data
+            fetch(`/api/meetings/${meetingId}/details`)
+            .then(response => response.json())
+            .then(data => {
+                const form = document.getElementById('meeting-form');
+                form.querySelector('input[name="title"]').value = data.title;
+                form.querySelector('input[name="organizer"]').value = data.organizer;
+                form.querySelector('input[name="date"]').value = data.date;
+                form.querySelector('input[name="startTime"]').value = data.startTime;
+                form.querySelector('input[name="duration"]').value = data.duration;
+                form.querySelector('textarea[name="description"]').value = data.description || '';
+                form.querySelector('textarea[name="participants"]').value = data.participants ? data.participants.join(', ') : '';
+                
+                const modal = new bootstrap.Modal(document.getElementById('createMeetingModal'));
+                modal.show();
+            })
+            .catch(error => {
+                alert('Error loading meeting details: ' + error);
+            });
+        }
+
+        function saveMeeting() {
+            const form = document.getElementById('meeting-form');
+            const formData = new FormData(form);
+            const meetingId = document.getElementById('meeting-id').value;
+
+            const url = meetingId ? `/api/meetings/${meetingId}/update` : '/api/meetings/create';
+
+            fetch(url, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(meetingId ? 'Meeting updated successfully' : 'Meeting created successfully');
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('createMeetingModal'));
+                    modal.hide();
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                alert('Error saving meeting: ' + error);
+            });
+        }
+
+        function startMeeting(meetingId) {
+            if (confirm('Are you sure you want to start this meeting?')) {
+                fetch(`/api/meetings/${meetingId}/start`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Meeting started successfully');
+                        // Open meeting room in new tab
+                        window.open(`http://localhost:8001/room/${data.room_id}`, '_blank');
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    alert('Error starting meeting: ' + error);
+                });
+            }
+        }
+
+        function joinMeeting(meetingId) {
+            fetch(`/api/meetings/${meetingId}/details`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.room_id) {
+                    window.open(`http://localhost:8001/room/${data.room_id}`, '_blank');
+                } else {
+                    alert('Meeting room not available');
+                }
+            })
+            .catch(error => {
+                alert('Error joining meeting: ' + error);
+            });
+        }
+
+        function endMeeting(meetingId) {
+            if (confirm('Are you sure you want to end this meeting?')) {
+                fetch(`/api/meetings/${meetingId}/end`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Meeting ended successfully');
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    alert('Error ending meeting: ' + error);
+                });
+            }
+        }
+
+        function cancelMeeting(meetingId) {
+            if (confirm('Are you sure you want to cancel this meeting?')) {
+                fetch(`/api/meetings/${meetingId}/cancel`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Meeting cancelled successfully');
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    alert('Error cancelling meeting: ' + error);
+                });
+            }
+        }
+
+        function exportMeetings() {
+            fetch('/api/meetings/export')
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'meetings_export.csv';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => {
+                alert('Error exporting meetings: ' + error);
+            });
+        }
+
+        // Auto-refresh every 60 seconds
+        setInterval(refreshMeetings, 60000);
+    </script>
+</body>
+</html>
