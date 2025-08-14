@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teams Clone - Room {{ room_id }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/room.css">
+</head>
+<body>
+    <div class="container-fluid h-100">
+        <!-- Header -->
+        <nav class="navbar navbar-dark bg-primary">
+            <div class="container-fluid">
+                <span class="navbar-brand">Room: {{ room_id }}</span>
+                <div class="navbar-nav ms-auto d-flex flex-row">
+                    <button class="btn btn-outline-light me-2" id="toggle-video" title="Toggle Video (Ctrl+E) | Right-click for camera options">
+                        <i class="bi bi-camera-video"></i>
+                    </button>
+                    <button class="btn btn-outline-light me-2" id="toggle-audio" title="Toggle Audio (Ctrl+M) | Right-click for microphone options">
+                        <i class="bi bi-mic"></i>
+                    </button>
+                    <button class="btn btn-outline-light me-2" id="share-screen" title="Share Screen (Ctrl+D)">
+                        <i class="bi bi-display"></i>
+                    </button>
+                    <button class="btn btn-outline-light me-2" id="record-meeting" title="Record Meeting">
+                        <i class="bi bi-record-circle"></i>
+                    </button>
+                    <button class="btn btn-outline-light me-2" id="schedule-meeting" title="Schedule Meeting">
+                        <i class="bi bi-calendar-plus"></i>
+                    </button>
+                    <button class="btn btn-outline-light me-2" id="chat-toggle" title="Toggle Chat" data-bs-toggle="collapse" data-bs-target="#chat-sidebar">
+                        <i class="bi bi-chat-dots"></i>
+                    </button>
+                    <button class="btn btn-outline-light me-2" id="participants-toggle" title="Show Participants">
+                        <i class="bi bi-people"></i>
+                    </button>
+                    <button class="btn btn-outline-light me-2" id="settings" title="Settings">
+                        <i class="bi bi-gear"></i>
+                    </button>
+                    <button class="btn btn-outline-light me-2" id="leave-room" title="Leave Room">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Recording Status Indicator -->
+        <div id="recording-status" class="recording-status" style="display: none;">
+            <div class="recording-indicator">
+                <i class="bi bi-record-circle text-danger recording-pulse"></i>
+                <span class="fw-bold">REC</span>
+                <span id="recording-timer" class="recording-timer">00:00</span>
+            </div>
+        </div>
+
+        <div class="row h-100">
+            <!-- Video Area -->
+            <div class="col-md-6 video-area">
+                <div class="video-container">
+                    <div id="local-video-container" class="video-wrapper">
+                        <video id="local-video" autoplay muted playsinline></video>
+                        <div class="video-label">You</div>
+                    </div>
+                    <div id="remote-videos" class="remote-videos">
+                        <!-- Remote videos will be added here -->
+                    </div>
+                    <div id="screen-share-container" class="screen-share hidden">
+                        <video id="screen-share-video" autoplay></video>
+                        <div class="video-label">Screen Share</div>
+                    </div>
+                </div>
+                
+                <!-- Participants List -->
+                <div class="participants-bar">
+                    <div class="participants-list">
+                        <span class="participants-count">Participants (1)</span>
+                        <div id="participants" class="participants-avatars">
+                            <!-- Participants will be listed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Attendees Panel -->
+            <div class="col-md-3 attendees-panel">
+                <div class="panel-container">
+                    <div class="panel-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6><i class="bi bi-people"></i> Active Attendees</h6>
+                            <span class="badge bg-primary" id="attendees-count">1</span>
+                        </div>
+                    </div>
+                    <div class="attendees-list" id="attendees-list">
+                        <!-- Active attendees will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Panel -->
+            <div class="col-md-3 chat-panel">
+                <div class="panel-container">
+                    <div class="panel-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6><i class="bi bi-chat-dots"></i> Chat</h6>
+                            <div class="chat-actions">
+                                <button class="btn btn-sm btn-outline-secondary" id="clear-chat" title="Clear Chat">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" id="emoji-picker" title="Emoji">
+                                    <i class="bi bi-emoji-smile"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="system-message">Welcome to the room! Start chatting below.</div>
+                    </div>
+                    <div class="chat-input">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="message-input" placeholder="Type a message..." maxlength="500">
+                            <button class="btn btn-primary" id="send-message">
+                                <i class="bi bi-send"></i>
+                            </button>
+                        </div>
+                        <div class="typing-indicator" id="typing-indicator" style="display: none;">
+                            <small class="text-muted"><span id="typing-users"></span> is typing...</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Username Modal -->
+    <div class="modal fade" id="usernameModal" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Enter Your Name</h5>
+                </div>
+                <div class="modal-body">
+                    <input type="text" class="form-control" id="username-input" placeholder="Your name">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="join-room-btn">Join Room</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Participants Modal -->
+    <div class="modal fade" id="participantsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-people"></i> Participants</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="participants-stats mb-3">
+                        <span class="badge bg-primary" id="total-participants">0 Participants</span>
+                        <span class="badge bg-success ms-2" id="participants-with-video">0 with video</span>
+                        <span class="badge bg-info ms-2" id="participants-with-audio">0 with audio</span>
+                    </div>
+                    <div class="participants-search mb-3">
+                        <input type="text" class="form-control" id="participants-search" placeholder="Search participants...">
+                    </div>
+                    <div id="participants-list" class="participants-detailed-list">
+                        <!-- Participants will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal fade" id="settingsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-gear"></i> Settings</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-camera-video"></i> Video Settings</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Camera</label>
+                                <select class="form-select" id="camera-select">
+                                    <option>Loading cameras...</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Video Quality</label>
+                                <select class="form-select" id="video-quality">
+                                    <option value="720p">720p HD</option>
+                                    <option value="480p">480p</option>
+                                    <option value="360p">360p</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="mirror-video" checked>
+                                    <label class="form-check-label" for="mirror-video">
+                                        Mirror my video
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-mic"></i> Audio Settings</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Microphone</label>
+                                <select class="form-select" id="microphone-select">
+                                    <option>Loading microphones...</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Speaker</label>
+                                <select class="form-select" id="speaker-select">
+                                    <option>Loading speakers...</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Microphone Volume</label>
+                                <input type="range" class="form-range" id="mic-volume" min="0" max="100" value="50">
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="noise-suppression" checked>
+                                    <label class="form-check-label" for="noise-suppression">
+                                        Noise suppression
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="echo-cancellation" checked>
+                                    <label class="form-check-label" for="echo-cancellation">
+                                        Echo cancellation
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-12">
+                            <h6><i class="bi bi-person-circle"></i> General Settings</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Display Name</label>
+                                <input type="text" class="form-control" id="display-name" placeholder="Your display name">
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="join-with-video" checked>
+                                    <label class="form-check-label" for="join-with-video">
+                                        Turn on camera when joining a meeting
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="join-with-audio" checked>
+                                    <label class="form-check-label" for="join-with-audio">
+                                        Turn on microphone when joining a meeting
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="save-settings">Save Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recording Status -->
+    <div id="recording-status" class="recording-status" style="display: none;">
+        <div class="recording-indicator">
+            <i class="bi bi-record-circle text-danger blink"></i>
+            <span>Recording...</span>
+            <span id="recording-timer">00:00</span>
+        </div>
+    </div>
+
+    <!-- Meeting Scheduler Modal -->
+    <div class="modal fade" id="scheduleModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-calendar-plus"></i> Schedule Meeting</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="schedule-form">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Meeting Title</label>
+                                    <input type="text" class="form-control" id="meeting-title" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Date</label>
+                                    <input type="date" class="form-control" id="meeting-date" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Start Time</label>
+                                    <input type="time" class="form-control" id="meeting-start-time" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Duration (minutes)</label>
+                                    <select class="form-select" id="meeting-duration">
+                                        <option value="30">30 minutes</option>
+                                        <option value="60" selected>1 hour</option>
+                                        <option value="90">1.5 hours</option>
+                                        <option value="120">2 hours</option>
+                                        <option value="180">3 hours</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Description</label>
+                                    <textarea class="form-control" id="meeting-description" rows="3"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Attendees (Email addresses)</label>
+                                    <textarea class="form-control" id="meeting-attendees" rows="3" placeholder="user1@example.com, user2@example.com"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="meeting-recurring">
+                                        <label class="form-check-label" for="meeting-recurring">
+                                            Recurring meeting
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="meeting-recording" checked>
+                                        <label class="form-check-label" for="meeting-recording">
+                                            Enable recording
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <div class="mt-3">
+                        <h6>Meeting Link Preview:</h6>
+                        <div class="alert alert-info">
+                            <strong>Join URL:</strong> <span id="meeting-link-preview">Will be generated after scheduling</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="schedule-meeting-btn">Schedule Meeting</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal fade" id="settingsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-gear"></i> Settings
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Audio Settings -->
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-mic"></i> Audio Settings</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Microphone</label>
+                                <select class="form-select" id="audio-device-select">
+                                    <option value="">Loading devices...</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Microphone Volume</label>
+                                <input type="range" class="form-range" id="mic-volume" min="0" max="100" value="100">
+                                <div class="d-flex justify-content-between">
+                                    <small>0%</small>
+                                    <small id="mic-volume-display">100%</small>
+                                    <small>100%</small>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="echo-cancellation" checked>
+                                    <label class="form-check-label" for="echo-cancellation">
+                                        Echo Cancellation
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="noise-suppression" checked>
+                                    <label class="form-check-label" for="noise-suppression">
+                                        Noise Suppression
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="auto-gain-control" checked>
+                                    <label class="form-check-label" for="auto-gain-control">
+                                        Auto Gain Control
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Video Settings -->
+                        <div class="col-md-6">
+                            <h6><i class="bi bi-camera-video"></i> Video Settings</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Camera</label>
+                                <select class="form-select" id="video-device-select">
+                                    <option value="">Loading devices...</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Video Quality</label>
+                                <select class="form-select" id="video-quality">
+                                    <option value="high">High (1280x720)</option>
+                                    <option value="medium" selected>Medium (640x480)</option>
+                                    <option value="low">Low (320x240)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Frame Rate</label>
+                                <select class="form-select" id="frame-rate">
+                                    <option value="30" selected>30 FPS</option>
+                                    <option value="15">15 FPS</option>
+                                    <option value="10">10 FPS</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="mirror-video" checked>
+                                    <label class="form-check-label" for="mirror-video">
+                                        Mirror My Video
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- General Settings -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h6><i class="bi bi-sliders"></i> General Settings</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="auto-join-audio" checked>
+                                            <label class="form-check-label" for="auto-join-audio">
+                                                Auto-join with microphone
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="auto-join-video" checked>
+                                            <label class="form-check-label" for="auto-join-video">
+                                                Auto-join with camera
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="push-to-talk">
+                                            <label class="form-check-label" for="push-to-talk">
+                                                Push to talk (Space bar)
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Notification Sounds</label>
+                                        <select class="form-select" id="notification-sounds">
+                                            <option value="all" selected>All notifications</option>
+                                            <option value="important">Important only</option>
+                                            <option value="none">None</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Display Name</label>
+                                        <input type="text" class="form-control" id="display-name" placeholder="Your display name">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Device Test -->
+                    <hr>
+                    <div class="row">
+                        <div class="col-12">
+                            <h6><i class="bi bi-check-circle"></i> Device Test</h6>
+                            <div class="d-flex gap-2 mb-3">
+                                <button class="btn btn-outline-primary" id="test-microphone">
+                                    <i class="bi bi-mic"></i> Test Microphone
+                                </button>
+                                <button class="btn btn-outline-primary" id="test-camera">
+                                    <i class="bi bi-camera-video"></i> Test Camera
+                                </button>
+                                <button class="btn btn-outline-primary" id="test-speakers">
+                                    <i class="bi bi-volume-up"></i> Test Speakers
+                                </button>
+                            </div>
+                            <div id="device-test-result" class="alert alert-info" style="display: none;">
+                                Device test results will appear here...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="save-settings">Save Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script src="/static/js/room.js"></script>
+    <script>
+        const ROOM_ID = "{{ room_id }}";
+    </script>
+</body>
+</html>
